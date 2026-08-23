@@ -376,7 +376,97 @@ let cart = {};
 let activeCat = "Todos";
 let query = "";
 
-/* estado editable guardado en el dispositivo */
+/* ==========================================================================
+   FIREBASE — catálogo guardado en la nube
+   --------------------------------------------------------------------------
+   Mientras FIREBASE_CONFIG esté vacío, el catálogo funciona igual que antes:
+   los cambios del modo edición se guardan solo en ese dispositivo.
+
+   Al pegar aquí la configuración del proyecto de Firebase, los cambios pasan
+   a guardarse en la nube y se ven en TODOS los dispositivos al instante, sin
+   tener que descargar ni volver a subir el archivo.
+   ========================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+const ADMIN_EMAIL = "admin@wheiner.app";   // ← cuenta fija del modo edición (la clave es su contraseña)
+
+const NUBE = { lista:false, db:null, auth:null };
+function nubeConfigurada(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.projectId); }
+
+function cargarScript(src){
+  return new Promise((ok, fallo)=>{
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = ok;
+    s.onerror = ()=> fallo(new Error("No se pudo cargar "+src));
+    document.head.appendChild(s);
+  });
+}
+
+async function iniciarNube(){
+  if(!nubeConfigurada()) return;
+  const base = "https://www.gstatic.com/firebasejs/10.14.1/";
+  try{
+    await cargarScript(base+"firebase-app-compat.js");
+    await cargarScript(base+"firebase-auth-compat.js");
+    await cargarScript(base+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);
+    NUBE.auth = firebase.auth();
+    NUBE.db   = firebase.firestore();
+    NUBE.lista = true;
+    /* escucha en vivo: cualquier cambio hecho desde otro dispositivo
+       aparece aquí solo, sin recargar la página */
+    NUBE.db.collection("productos").onSnapshot(
+      snap=>{
+        PRODUCTS = snap.docs.map(d=>{
+          const x = d.data();
+          const p = {
+            name : x.name || "",
+            sku  : d.id,
+            cat  : x.cat || CATEGORIES[0],
+            price: (x.price === undefined ? null : x.price),
+            stock: x.stock || "in"
+          };
+          if(x.photo) p.photo = x.photo;
+          return p;
+        });
+        renderChips();
+        sync();
+      },
+      e=>console.warn("Nube (lectura):", e)
+    );
+  }catch(e){
+    console.warn("No se pudo conectar con la nube:", e);
+    NUBE.lista = false;
+  }
+}
+
+function nubeGuardar(p){
+  if(!NUBE.lista) return;
+  const dato = {
+    name : p.name,
+    cat  : p.cat,
+    price: (p.price == null ? null : p.price),
+    stock: p.stock
+  };
+  if(p.photo) dato.photo = p.photo;
+  NUBE.db.collection("productos").doc(p.sku).set(dato, {merge:true})
+    .catch(e=> alert("No se pudo guardar en la nube:\n"+e.message));
+}
+
+function nubeBorrar(sku){
+  if(!NUBE.lista) return;
+  NUBE.db.collection("productos").doc(sku).delete()
+    .catch(e=> alert("No se pudo borrar en la nube:\n"+e.message));
+}
+
+/* estado editable guardado en el dispositivo (respaldo si no hay nube) */
 function loadOverrides(){ try{ return JSON.parse(localStorage.getItem("catalogo_ov")||"{}"); }catch(e){ return {}; } }
 function saveOverrides(){ try{ localStorage.setItem("catalogo_ov", JSON.stringify(overrides)); }catch(e){} }
 let overrides = loadOverrides();
@@ -396,6 +486,7 @@ function deleteProduct(sku){
   extraProducts = extraProducts.filter(x=>x.sku!==sku); saveExtraProducts();
   if(!deletedSkus.includes(sku)){ deletedSkus.push(sku); saveDeleted(); }
   delete overrides[sku]; saveOverrides();
+  nubeBorrar(sku);
   delete cart[sku];
   sync();
 }
@@ -613,13 +704,31 @@ document.getElementById("search").addEventListener("input", e=>{
 function clearSearch(){ query=""; document.getElementById("search").value=""; document.getElementById("clearSearch").style.display="none"; renderCatalog(); }
 
 /* ---- modo edición ---- */
-function tryAdmin(){ const c = prompt("Clave de edición:"); if(c===null) return; if(ADMIN_CODES.includes(c)){ document.body.classList.add("admin"); renderCatalog(); } else alert("Clave incorrecta."); }
-function exitAdmin(){ document.body.classList.remove("admin"); renderCatalog(); }
+function tryAdmin(){
+  const c = prompt("Clave de edición:");
+  if(c===null) return;
+  /* sin nube: se valida la clave local */
+  if(!NUBE.lista){
+    if(ADMIN_CODES.includes(c)){ document.body.classList.add("admin"); renderCatalog(); }
+    else alert("Clave incorrecta.");
+    return;
+  }
+  /* con nube: la clave es la contraseña real de la cuenta de edición */
+  NUBE.auth.signInWithEmailAndPassword(ADMIN_EMAIL, c)
+    .then(()=>{ document.body.classList.add("admin"); renderCatalog(); })
+    .catch(()=> alert("Clave incorrecta."));
+}
+function exitAdmin(){
+  document.body.classList.remove("admin");
+  if(NUBE.lista && NUBE.auth.currentUser) NUBE.auth.signOut().catch(()=>{});
+  renderCatalog();
+}
 
 function toggleStock(sku){
   if(!document.body.classList.contains("admin")) return;
   const p = PRODUCTS.find(x=>x.sku===sku); p.stock = p.stock==="in"?"out":"in";
   overrides[sku] = Object.assign({}, overrides[sku], {stock:p.stock}); saveOverrides();
+  nubeGuardar(p);
   if(p.stock==="out" && cart[sku]) delete cart[sku];
   sync();
 }
@@ -629,14 +738,16 @@ function editPrice(sku){
   const v = prompt("Nuevo precio (USD) para:\n"+p.name, p.price);
   if(v===null) return; const n = parseFloat(v.replace(",","."));
   if(isNaN(n)||n<0){ alert("Precio no válido."); return; }
-  p.price = n; overrides[sku] = Object.assign({}, overrides[sku], {price:n}); saveOverrides(); sync();
+  p.price = n; overrides[sku] = Object.assign({}, overrides[sku], {price:n}); saveOverrides();
+  nubeGuardar(p); sync();
 }
 function editName(sku){
   if(!document.body.classList.contains("admin")) return;
   const p = PRODUCTS.find(x=>x.sku===sku);
   const v = prompt("Nuevo nombre:", p.name);
   if(v===null || !v.trim()) return;
-  p.name = v.trim(); overrides[sku] = Object.assign({}, overrides[sku], {name:p.name}); saveOverrides(); sync();
+  p.name = v.trim(); overrides[sku] = Object.assign({}, overrides[sku], {name:p.name}); saveOverrides();
+  nubeGuardar(p); sync();
 }
 function pickImage(callback){
   const input = document.createElement("input");
@@ -680,6 +791,7 @@ function editPhoto(sku){
     overrides[sku] = Object.assign({}, overrides[sku], {photo:dataUrl}); saveOverrides();
     const extra = extraProducts.find(x=>x.sku===sku);
     if(extra) extra.photo = dataUrl, saveExtraProducts();
+    nubeGuardar(p);
     sync();
   });
 }
@@ -692,16 +804,22 @@ function addProduct(){
   if(catMatch) cat = catMatch;
   const price = parseFloat((prompt("Precio USD:","0")||"0").replace(",",".")); if(isNaN(price)){ alert("Precio no válido."); return; }
   const sku = (prompt("Código (SKU):","NUEVO-"+(PRODUCTS.length+1))||"").trim(); if(!sku) return;
+  if(PRODUCTS.some(x=>x.sku===sku)){ alert("Ya existe un producto con el código "+sku+"."); return; }
   const nuevo = {name:name.trim(), sku, cat:cat.trim(), price, stock:"in"};
   PRODUCTS.push(nuevo); extraProducts.push(nuevo); saveExtraProducts();
+  nubeGuardar(nuevo);
   sync();
+  /* con nube el cambio ya queda guardado para todos; sin nube hay que descargar */
+  const aviso = NUBE.lista
+    ? "Guardado en la nube. Ya se ve en todos los dispositivos."
+    : "Recuerda tocar \"Descargar\" para guardarlo de forma permanente en el catálogo de todos.";
   if(confirm("Producto agregado. ¿Deseas agregarle una foto ahora?")){
     pickImage((dataUrl)=>{
-      nuevo.photo = dataUrl; saveExtraProducts(); sync();
-      alert("Foto agregada. Recuerda tocar \"Descargar\" para guardarlo de forma permanente en el catálogo de todos.");
+      nuevo.photo = dataUrl; saveExtraProducts(); nubeGuardar(nuevo); sync();
+      alert("Foto agregada. "+aviso);
     });
   } else {
-    alert("Recuerda tocar \"Descargar\" para guardarlo de forma permanente en el catálogo de todos.");
+    alert(aviso);
   }
 }
 
@@ -722,6 +840,7 @@ function downloadCatalog(){
 }
 
 renderChips(); renderCatalog(); sync();
+iniciarNube();
 
 
 /* ---- portada: entrar al catálogo sin cambiar de archivo ---- */

@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Reglas de seguridad del catálogo de Moto Repuestos Wheiner SAS
+//
+// - Cualquiera puede LEER el catálogo (los clientes deben poder verlo).
+// - Solo alguien que haya iniciado sesión con la cuenta de edición puede
+//   ESCRIBIR (crear, cambiar o borrar productos).
+//
+// Estas reglas se pegan en: consola de Firebase → Firestore Database →
+// pestaña "Reglas" → Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /productos/{sku} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // todo lo demás queda cerrado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
