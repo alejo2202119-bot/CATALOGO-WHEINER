@@ -523,10 +523,11 @@ function applyOverrides(){
 applyOverrides();
 
 function allCats(){
-  const extra = [...new Set(PRODUCTS.map(p=>p.cat))]
-    .filter(c=>!CATEGORIES.includes(c))
-    .sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
-  return [...CATEGORIES, ...extra];
+  /* todas las categorías en orden alfabético, incluidas las que se creen
+     al agregar productos con una categoría nueva */
+  const extra = [...new Set(PRODUCTS.map(p=>p.cat))].filter(c=>!CATEGORIES.includes(c));
+  return [...CATEGORIES, ...extra]
+    .sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}));
 }
 function renderChips(){
   const all = ["Todos", ...allCats()];
