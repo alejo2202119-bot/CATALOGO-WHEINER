@@ -13,40 +13,44 @@ de edición para actualizar el catálogo sin tocar código.
 
 ## Páginas
 
-- `index.html` — portada de bienvenida con el banner de la empresa; el botón
-  "Ver catálogo" entra al catálogo.
-- `catalogo.html` — catálogo con banner, buscador, categorías, carrito y modo
-  edición.
-
-Solo se comparte el link de la portada: desde ahí, un toque en "Ver catálogo"
-lleva al catálogo completo.
+- `index.html` — **archivo único** que contiene todo: la portada de bienvenida
+  como capa a pantalla completa y, debajo, el catálogo con banner, buscador,
+  categorías, carrito y modo edición. El botón "Ver catálogo" solo oculta la
+  portada; no navega a otro archivo.
+- `catalogo.html` — el catálogo por separado; se conserva como respaldo, pero
+  el link público apunta a `index.html`.
 
 ## Modo edición
 
-1. En `catalogo.html`, toca el punto **●** al final del pie de página.
+1. Toca el punto **●** al final del pie de página.
 2. Escribe la clave: **W-2026** (puedes cambiarla editando `ADMIN_CODES`
-   en `catalogo.html`).
+   en `index.html`).
 3. Dentro del modo edición puedes: cambiar estado (Disponible/Agotado), precio,
    nombre o foto de cada producto tocándolos directamente, o agregar productos
    nuevos con el botón "＋ Producto".
-4. Al terminar, toca **Descargar** para bajar el archivo `catalogo.html`
-   actualizado y súbelo al repositorio para que el cambio quede publicado para
-   todos (si no se sube, el cambio solo se ve en ese dispositivo).
+4. Al terminar, toca **Descargar** para bajar el archivo actualizado y súbelo
+   al repositorio para que el cambio quede publicado para todos (si no se sube,
+   el cambio solo se ve en ese dispositivo).
+
+Mientras no haya ningún producto cargado, el catálogo muestra un aviso de
+"¡Muy pronto!"; ese aviso desaparece solo en cuanto se agrega el primer
+producto.
 
 ## Banner principal
 
-La imagen oficial ya está puesta en `assets/banner-wheiner.webp` y se usa en
-`index.html` y `catalogo.html`. Para cambiarla, reemplaza ese archivo (mismo
-nombre) o actualiza el `src` de los `<img>` correspondientes.
+La imagen oficial está en `assets/banner-wheiner.webp`. Para cambiarla,
+reemplaza ese archivo conservando el mismo nombre.
 
 ## Publicación
 
-El catálogo se ve en el navegador a través de [htmlpreview.github.io](https://htmlpreview.github.io),
-que muestra en vivo el contenido de este repositorio — no requiere GitHub
-Pages ni ningún paso de publicación aparte. Cada vez que se sube un cambio a
-la rama `claude/moto-repuestos-wheiner-catalog-8nu166`, el link se actualiza
-solo en segundos.
+El catálogo se sirve con [raw.githack.com](https://raw.githack.com), que
+entrega el archivo del repositorio directamente como página web, con
+cabeceras `no-cache`. Eso significa que **el link siempre muestra la última
+versión**, sin caché intermedia y sin ningún paso de publicación aparte: basta
+con subir el cambio a la rama `claude/moto-repuestos-wheiner-catalog-8nu166`.
 
-**Link único (portada):** https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
+**Link único y permanente:**
 
-Este link es estable mientras la rama exista con ese nombre.
+https://raw.githack.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
+
+Este link no cambia nunca mientras la rama conserve ese nombre.
