@@ -13,10 +13,13 @@ de edición para actualizar el catálogo sin tocar código.
 
 ## Páginas
 
-- `catalogo.html` — página única: banner, saludo de bienvenida, buscador,
-  categorías, catálogo, carrito y modo edición.
-- `index.html` — queda solo como redirección automática hacia `catalogo.html`,
-  por si alguien guardó el link viejo.
+- `index.html` — portada de bienvenida con el banner de la empresa; el botón
+  "Ver catálogo" entra al catálogo.
+- `catalogo.html` — catálogo con banner, buscador, categorías, carrito y modo
+  edición.
+
+Solo se comparte el link de la portada: desde ahí, un toque en "Ver catálogo"
+lleva al catálogo completo.
 
 ## Modo edición
 
@@ -33,8 +36,8 @@ de edición para actualizar el catálogo sin tocar código.
 ## Banner principal
 
 La imagen oficial ya está puesta en `assets/banner-wheiner.webp` y se usa en
-`catalogo.html`. Para cambiarla, reemplaza ese archivo (mismo nombre) o
-actualiza el `src` del `<img>` dentro del bloque `.hero`.
+`index.html` y `catalogo.html`. Para cambiarla, reemplaza ese archivo (mismo
+nombre) o actualiza el `src` de los `<img>` correspondientes.
 
 ## Publicación
 
@@ -44,6 +47,6 @@ Pages ni ningún paso de publicación aparte. Cada vez que se sube un cambio a
 la rama `claude/moto-repuestos-wheiner-catalog-8nu166`, el link se actualiza
 solo en segundos.
 
-**Link único:** https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/catalogo.html
+**Link único (portada):** https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
 
 Este link es estable mientras la rama exista con ese nombre.
