@@ -359,7 +359,10 @@
 const WHATSAPP_NUMBER = "573153266522";   // ← número de WhatsApp de Moto Repuestos Wheiner (con código de país, sin +)
 const ADMIN_CODES = ["W-2026"];      // ← clave para el modo edición
 
-const CATEGORIES = ["Accesorios y Lujos", "Eléctrico", "Iluminación", "Llantas y Neumáticos", "Protección y Defensas"];  // ← categorías del negocio
+const CATEGORIES = ["Accesorios y Lujos", "Cables y Comandos", "Carrocería", "Eléctrico",
+                    "Frenos", "Iluminación", "Llantas y Neumáticos", "Motor",
+                    "Protección y Defensas", "Rodamientos y Ejes", "Suspensión",
+                    "Transmisión y Clutch"];  // ← categorías del negocio
 
 /*PRODUCTS_START*/
 let PRODUCTS = [
@@ -444,6 +447,7 @@ async function iniciarNube(){
             price: (x.price === undefined ? null : x.price),
             stock: x.stock || "in"
           };
+          if(x.code)  p.code  = x.code;
           if(x.photo) p.photo = x.photo;
           return p;
         });
@@ -462,6 +466,7 @@ function nubeGuardar(p){
   if(!NUBE.lista) return;
   const dato = {
     name : p.name,
+    code : p.code || null,
     cat  : p.cat,
     price: (p.price == null ? null : p.price),
     stock: p.stock
@@ -612,7 +617,7 @@ function cardHTML(p){
     <div class="photo">${badge}${media}${photoEdit}${photoRemove}${photoDownload}${cardDelete}</div>
     <div class="card-body">
       <div class="p-name" data-sku="${p.sku}" onclick="editName('${p.sku}')">${esc(p.name)}</div>
-      <div class="p-meta">${p.sku}</div>
+      ${p.code ? `<div class="p-meta">${esc(p.code)}</div>` : ""}
       <div class="p-foot">
         ${priceHTML}
         ${action}
@@ -659,7 +664,7 @@ function renderDrawer(){
   el.innerHTML = entries.map(([sku,q])=>{
     const p = PRODUCTS.find(x=>x.sku===sku); if(!p) return "";
     return `<div class="d-item">
-      <div class="d-info"><div class="d-name">${esc(p.name)}</div><div class="d-price">${precioTxt(p.price)} c/u · ${p.sku}</div></div>
+      <div class="d-info"><div class="d-name">${esc(p.name)}</div><div class="d-price">${precioTxt(p.price)} c/u${p.code ? " · "+esc(p.code) : ""}</div></div>
       <div class="qty">
         <button onclick="dec('${sku}')">−</button>
         <input type="number" inputmode="numeric" min="0" value="${q}" onchange="setQty('${sku}', this.value)" onfocus="this.select()">
@@ -685,7 +690,7 @@ function buildWaUrl(){
   const lineas = entries.map(([sku,q], i)=>{
     const p = PRODUCTS.find(x=>x.sku===sku);
     const sub = p.price*q; total += sub; unidades += q;
-    return `${i+1}. ${p.name} (${p.sku})\n   Cantidad: ${q} · ${precioTxt(p.price)} c/u · Subtotal: ${precioTxt(sub)}`;
+    return `${i+1}. ${p.name}${p.code ? " ("+p.code+")" : ""}\n   Cantidad: ${q} · ${precioTxt(p.price)} c/u · Subtotal: ${precioTxt(sub)}`;
   });
   const msg = [
     "*PEDIDO*",
@@ -853,7 +858,7 @@ function addProduct(){
   const price = parseFloat((prompt("Precio en pesos:","0")||"0").replace(/[.,]/g,"")); if(isNaN(price)){ alert("Precio no válido."); return; }
   const sku = (prompt("Código (SKU):","NUEVO-"+(PRODUCTS.length+1))||"").trim(); if(!sku) return;
   if(PRODUCTS.some(x=>x.sku===sku)){ alert("Ya existe un producto con el código "+sku+"."); return; }
-  const nuevo = {name:name.trim(), sku, cat:cat.trim(), price, stock:"in"};
+  const nuevo = {name:name.trim(), sku, code:sku, cat:cat.trim(), price, stock:"in"};
   PRODUCTS.push(nuevo); extraProducts.push(nuevo); saveExtraProducts();
   nubeGuardar(nuevo);
   sync();
