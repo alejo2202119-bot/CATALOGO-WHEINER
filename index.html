@@ -314,7 +314,7 @@
 <div class="cart-bar" id="cartBar">
   <button onclick="openCart()">
     <span class="left"><span class="pill" id="barCount">0</span> Ver pedido</span>
-    <span id="barTotal">USD 0.00</span>
+    <span id="barTotal">$0</span>
   </button>
 </div>
 
@@ -324,7 +324,7 @@
   <div class="drawer-head"><h3>Tu pedido</h3><button class="x" onclick="closeCart()">✕</button></div>
   <div class="drawer-items" id="drawerItems"></div>
   <div class="drawer-foot">
-    <div class="foot-total"><span class="lbl">Total del pedido</span><span class="val" id="drawerTotal">USD 0.00</span></div>
+    <div class="foot-total"><span class="lbl">Total del pedido</span><span class="val" id="drawerTotal">$0</span></div>
     <button class="send" onclick="sendWhatsapp()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm0 2a8 8 0 11-4.1 14.9l-.3-.2-2.8.8.8-2.7-.2-.3A8 8 0 0112 4zm4.5 10.3c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.1-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.8-1.8c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.8.8-.9 1.9-.4 3.1a11 11 0 004.4 4.4c1.5.7 2.5.6 3.4.4.6-.1 1.4-.6 1.6-1.2.2-.5.2-1 .1-1.1z"/></svg>
       Enviar pedido por WhatsApp
@@ -352,14 +352,14 @@
       Al terminar toca "Descargar" y vuelve a subir ese archivo a tu hosting.
 
    2) DIRECTO (en el código): edita la lista PRODUCTS de abajo. Cada línea es
-      un producto:  name=nombre · sku=código · cat=categoría · price=precio USD
+      un producto:  name=nombre · sku=código · cat=categoría · price=precio en pesos
       · stock="in" (disponible) o "out" (agotado) · photo=opcional
    ========================================================================== */
 
 const WHATSAPP_NUMBER = "573153266522";   // ← número de WhatsApp de Moto Repuestos Wheiner (con código de país, sin +)
 const ADMIN_CODES = ["W-2026"];      // ← clave para el modo edición
 
-const CATEGORIES = ["Motor", "Frenos", "Eléctrico", "Transmisión", "Suspensión", "Accesorios"];  // ← categorías del negocio
+const CATEGORIES = ["Accesorios y Lujos", "Eléctrico", "Iluminación", "Llantas y Neumáticos", "Protección y Defensas"];  // ← categorías del negocio
 
 /*PRODUCTS_START*/
 let PRODUCTS = [
@@ -367,13 +367,15 @@ let PRODUCTS = [
 /*PRODUCTS_END*/
 
 const CAT_ICON = {
-  "Frenos":'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/>',
-  "Motor":'<circle cx="12" cy="8" r="5"/><path d="M9 13v7h6v-7"/>',
+  "Llantas y Neumáticos":'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/>',
+  "Iluminación":'<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.4.3.5.7.5 1.1v.5h6v-.5c0-.4.1-.8.5-1.1A6 6 0 0012 3z"/>',
   "Eléctrico":'<path d="M4 12a4 4 0 018 0 4 4 0 008 0"/><path d="M4 12v4M20 12v4"/>',
-  "Transmisión":'<circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="7" r="2.2"/><circle cx="7" cy="17" r="2.2"/><circle cx="17" cy="17" r="2.2"/><path d="M9 8l6 8M15 8l-6 8"/>',
-  "Suspensión":'<path d="M12 3v6"/><path d="M7 9l5 3 5-3"/><path d="M12 12v9"/>',
-  "Accesorios":'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.33 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.33 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09A1.7 1.7 0 009 19.4a1.7 1.7 0 00-1.87.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.33-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/>',
+  "Protección y Defensas":'<path d="M12 3l7 3v6c0 4.2-2.9 7.9-7 9-4.1-1.1-7-4.8-7-9V6l7-3z"/>',
+  "Accesorios y Lujos":'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.33 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.33 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09A1.7 1.7 0 009 19.4a1.7 1.7 0 00-1.87.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.33-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/>',
 };
+
+/* los precios estan en pesos colombianos: sin decimales y con punto de miles */
+function precioTxt(n){ return "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
 let cart = {};
 let activeCat = "Todos";
@@ -578,7 +580,7 @@ function cardHTML(p){
   const inCart = cart[p.sku]||0;
   const isOut = p.stock==="out";
   const pending = p.price==null;
-  const media = p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}" onclick="openLightbox(this)">` : `<svg class="placeholder" viewBox="0 0 24 24">${CAT_ICON[p.cat]||''}</svg>`;
+  const media = p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}" loading="lazy" onclick="openLightbox(this)">` : `<svg class="placeholder" viewBox="0 0 24 24">${CAT_ICON[p.cat]||''}</svg>`;
   const badge = `<span class="badge ${isOut?'out':'ok'}" onclick="toggleStock('${p.sku}')">${isOut?'Agotado':'Disponible'}</span>`;
   const photoEdit = `<button class="photo-edit" onclick="editPhoto('${p.sku}')" title="Cambiar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>`;
   /* descargar y quitar foto solo tienen sentido si el producto ya tiene una */
@@ -605,7 +607,7 @@ function cardHTML(p){
   }
   const priceHTML = pending
     ? `<div class="price-pending price-edit" onclick="editPrice('${p.sku}')">Precio pronto</div>`
-    : `<div class="price price-edit" onclick="editPrice('${p.sku}')"><span class="cur">USD</span>${p.price.toFixed(2)}</div>`;
+    : `<div class="price price-edit" onclick="editPrice('${p.sku}')">${precioTxt(p.price)}</div>`;
   return `<div class="card ${isOut?'is-out':''}">
     <div class="photo">${badge}${media}${photoEdit}${photoRemove}${photoDownload}${cardDelete}</div>
     <div class="card-body">
@@ -644,8 +646,8 @@ function sync(){
   const count = Object.values(cart).reduce((a,b)=>a+b,0);
   const total = Object.entries(cart).reduce((s,[sku,q])=>{ const p=PRODUCTS.find(x=>x.sku===sku); return s+(p?p.price*q:0); },0);
   document.getElementById("barCount").textContent = count;
-  document.getElementById("barTotal").textContent = "USD "+total.toFixed(2);
-  document.getElementById("drawerTotal").textContent = "USD "+total.toFixed(2);
+  document.getElementById("barTotal").textContent = precioTxt(total);
+  document.getElementById("drawerTotal").textContent = precioTxt(total);
   document.getElementById("cartBar").classList.toggle("show", count>0);
   if(count===0) closeCart();
 }
@@ -657,13 +659,13 @@ function renderDrawer(){
   el.innerHTML = entries.map(([sku,q])=>{
     const p = PRODUCTS.find(x=>x.sku===sku); if(!p) return "";
     return `<div class="d-item">
-      <div class="d-info"><div class="d-name">${esc(p.name)}</div><div class="d-price">USD ${p.price.toFixed(2)} c/u · ${p.sku}</div></div>
+      <div class="d-info"><div class="d-name">${esc(p.name)}</div><div class="d-price">${precioTxt(p.price)} c/u · ${p.sku}</div></div>
       <div class="qty">
         <button onclick="dec('${sku}')">−</button>
         <input type="number" inputmode="numeric" min="0" value="${q}" onchange="setQty('${sku}', this.value)" onfocus="this.select()">
         <button onclick="inc('${sku}')">＋</button>
       </div>
-      <div class="d-sub">USD ${(p.price*q).toFixed(2)}</div>
+      <div class="d-sub">${precioTxt(p.price*q)}</div>
       <button class="d-remove" onclick="removeItem('${sku}')" aria-label="Eliminar ${esc(p.name)} del pedido" title="Eliminar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
       </button>
@@ -683,7 +685,7 @@ function buildWaUrl(){
   const lineas = entries.map(([sku,q], i)=>{
     const p = PRODUCTS.find(x=>x.sku===sku);
     const sub = p.price*q; total += sub; unidades += q;
-    return `${i+1}. ${p.name} (${p.sku})\n   Cantidad: ${q} · USD ${p.price.toFixed(2)} c/u · Subtotal: USD ${sub.toFixed(2)}`;
+    return `${i+1}. ${p.name} (${p.sku})\n   Cantidad: ${q} · ${precioTxt(p.price)} c/u · Subtotal: ${precioTxt(sub)}`;
   });
   const msg = [
     "*PEDIDO*",
@@ -695,7 +697,7 @@ function buildWaUrl(){
     "",
     "-----------------------------",
     `${entries.length} producto(s) · ${unidades} unidad(es)`,
-    `*TOTAL: USD ${total.toFixed(2)}*`,
+    `*TOTAL: ${precioTxt(total)}*`,
     "",
     "Quedo atento para coordinar pago y entrega. ¡Gracias!"
   ].join("\n");
@@ -767,7 +769,7 @@ function toggleStock(sku){
 function editPrice(sku){
   if(!document.body.classList.contains("admin")) return;
   const p = PRODUCTS.find(x=>x.sku===sku);
-  const v = prompt("Nuevo precio (USD) para:\n"+p.name, p.price);
+  const v = prompt("Nuevo precio en pesos para:\n"+p.name, p.price);
   if(v===null) return; const n = parseFloat(v.replace(",","."));
   if(isNaN(n)||n<0){ alert("Precio no válido."); return; }
   p.price = n; overrides[sku] = Object.assign({}, overrides[sku], {price:n}); saveOverrides();
@@ -848,7 +850,7 @@ function addProduct(){
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
   const catMatch = CATEGORIES.find(c => norm(c)===norm(cat));
   if(catMatch) cat = catMatch;
-  const price = parseFloat((prompt("Precio USD:","0")||"0").replace(",",".")); if(isNaN(price)){ alert("Precio no válido."); return; }
+  const price = parseFloat((prompt("Precio en pesos:","0")||"0").replace(/[.,]/g,"")); if(isNaN(price)){ alert("Precio no válido."); return; }
   const sku = (prompt("Código (SKU):","NUEVO-"+(PRODUCTS.length+1))||"").trim(); if(!sku) return;
   if(PRODUCTS.some(x=>x.sku===sku)){ alert("Ya existe un producto con el código "+sku+"."); return; }
   const nuevo = {name:name.trim(), sku, cat:cat.trim(), price, stock:"in"};
