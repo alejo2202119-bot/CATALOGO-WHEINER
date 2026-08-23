@@ -13,7 +13,7 @@
     --surface:#FFFFFF; --ink:#141A22;
     --line:#E4E8EE;
     --red:#E2231A; --red-dark:#A8140D;
-    --black:#12100F; --black-dark:#0A0908;
+    --black:#0C0C0D; --black-dark:#08090A;
     --coral:#FF6A5E; --seam:#0b0b0b;
     --white-90:rgba(255,255,255,.92); --white-70:rgba(255,255,255,.72);
     --shadow:0 20px 48px rgba(6,6,6,.35);
@@ -23,11 +23,15 @@
   body{
     margin:0; min-height:100%; color:#fff; font-family:'Inter',sans-serif;
     -webkit-font-smoothing:antialiased;
-    background:
-      radial-gradient(ellipse 900px 620px at 6% -8%, rgba(255,255,255,.28), transparent 62%),
-      radial-gradient(ellipse 760px 700px at 102% 108%, rgba(255,90,84,.38), transparent 60%),
-      radial-gradient(ellipse 500px 500px at 96% -6%, rgba(255,255,255,.14), transparent 60%),
-      linear-gradient(135deg, var(--black-dark) 0%, var(--black) 45%, var(--seam) 49.6%, var(--seam) 50.4%, var(--red-dark) 55%, var(--red) 100%);
+    background-color:#0a0a0a;
+    background-image:
+      radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px),
+      repeating-linear-gradient(125deg, rgba(226,35,26,.22) 0px, rgba(226,35,26,.22) 2px, transparent 2px, transparent 150px),
+      radial-gradient(ellipse 900px 620px at 8% -10%, rgba(255,255,255,.10), transparent 60%),
+      radial-gradient(ellipse 820px 760px at 105% -4%, rgba(255,255,255,.09), transparent 58%),
+      linear-gradient(165deg, #0c0c0d 0%, #131417 55%, #1b1c1f 100%);
+    background-size: 6px 6px, auto, auto, auto, auto;
+    background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat;
     display:flex; flex-direction:column; align-items:center;
   }
   .hbar{width:100%; height:5px; background:linear-gradient(90deg, #fff 0 50%, var(--red-dark) 50% 100%); flex-shrink:0;}
@@ -47,10 +51,9 @@
   }
 
   .frame{
-    width:100%; max-width:420px;
-    overflow:hidden; border-radius:0;
-    box-shadow:var(--shadow); border:3px solid #fff;
-    background:var(--surface);
+    width:100%; max-width:480px;
+    overflow:hidden; border-radius:16px;
+    box-shadow:0 26px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.10);
     animation:rise .55s cubic-bezier(.2,.8,.2,1) both;
   }
   .frame img{ width:100%; height:auto; display:block; }
