@@ -24,7 +24,7 @@ lleva al catálogo completo.
 ## Modo edición
 
 1. En `catalogo.html`, toca el punto **●** al final del pie de página.
-2. Escribe la clave: **Wheiner2026** (puedes cambiarla editando `ADMIN_CODES`
+2. Escribe la clave: **W-2026** (puedes cambiarla editando `ADMIN_CODES`
    en `catalogo.html`).
 3. Dentro del modo edición puedes: cambiar estado (Disponible/Agotado), precio,
    nombre o foto de cada producto tocándolos directamente, o agregar productos
