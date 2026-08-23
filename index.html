@@ -174,9 +174,12 @@
   body.admin .card-delete{position:absolute; bottom:9px; left:9px; z-index:2; display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:9px; border:none; background:var(--out); color:#fff; box-shadow:0 4px 10px rgba(226,35,26,.35); cursor:pointer;}
   .photo-download{display:none;}
   body.admin .photo-download{position:absolute; top:9px; right:9px; z-index:2; display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:9px; border:none; background:var(--black); color:#fff; box-shadow:0 4px 10px rgba(20,26,34,.35); cursor:pointer;}
+  .photo-remove{display:none;}
+  body.admin .photo-remove{position:absolute; bottom:9px; right:45px; z-index:2; display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:9px; border:none; background:var(--ink); color:#fff; box-shadow:0 4px 10px rgba(20,26,34,.4); cursor:pointer;}
   body.admin .card-delete svg{width:15px; height:15px;}
   body.admin .photo-edit svg{width:15px; height:15px;}
   body.admin .photo-download svg{width:15px; height:15px;}
+  body.admin .photo-remove svg{width:15px; height:15px;}
   body.admin .photo{cursor:default;}
 
   @media(min-width:720px){
@@ -472,6 +475,15 @@ function nubeBorrar(sku){
     .catch(e=> alert("No se pudo borrar en la nube:\n"+e.message));
 }
 
+/* quitar solo la foto: hay que borrar el campo explícitamente, porque una
+   escritura con merge nunca elimina campos que ya estaban guardados */
+function nubeQuitarFoto(sku){
+  if(!NUBE.lista) return;
+  NUBE.db.collection("productos").doc(sku)
+    .update({ photo: firebase.firestore.FieldValue.delete() })
+    .catch(e=> alert("No se pudo quitar la foto en la nube:\n"+e.message));
+}
+
 /* estado editable guardado en el dispositivo (respaldo si no hay nube) */
 function loadOverrides(){ try{ return JSON.parse(localStorage.getItem("catalogo_ov")||"{}"); }catch(e){ return {}; } }
 function saveOverrides(){ try{ localStorage.setItem("catalogo_ov", JSON.stringify(overrides)); }catch(e){} }
@@ -499,7 +511,13 @@ function deleteProduct(sku){
 function applyOverrides(){
   PRODUCTS.forEach(p=>{
     const o = overrides[p.sku];
-    if(o){ if(o.stock) p.stock=o.stock; if(o.price!=null) p.price=o.price; if(o.name) p.name=o.name; if(o.photo) p.photo=o.photo; }
+    if(o){
+      if(o.stock) p.stock=o.stock;
+      if(o.price!=null) p.price=o.price;
+      if(o.name) p.name=o.name;
+      if(o.photo) p.photo=o.photo;
+      else if(o.photo===null) delete p.photo;   // foto quitada a propósito
+    }
   });
 }
 applyOverrides();
@@ -562,7 +580,13 @@ function cardHTML(p){
   const media = p.photo ? `<img src="${p.photo}" alt="${esc(p.name)}" onclick="openLightbox(this)">` : `<svg class="placeholder" viewBox="0 0 24 24">${CAT_ICON[p.cat]||''}</svg>`;
   const badge = `<span class="badge ${isOut?'out':'ok'}" onclick="toggleStock('${p.sku}')">${isOut?'Agotado':'Disponible'}</span>`;
   const photoEdit = `<button class="photo-edit" onclick="editPhoto('${p.sku}')" title="Cambiar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>`;
-  const photoDownload = `<button class="photo-download" onclick="downloadPhoto('${p.sku}')" title="Descargar foto para editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg></button>`;
+  /* descargar y quitar foto solo tienen sentido si el producto ya tiene una */
+  const photoDownload = p.photo
+    ? `<button class="photo-download" onclick="downloadPhoto('${p.sku}')" title="Descargar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg></button>`
+    : "";
+  const photoRemove = p.photo
+    ? `<button class="photo-remove" onclick="removePhoto('${p.sku}')" title="Quitar la foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M10.4 10.4a2 2 0 1 1-2.8-2.8"/><line x1="13.5" y1="13.5" x2="6" y2="21"/><path d="M3.6 3.6A2 2 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.05-.22 1.41-.59"/><path d="M21 15V5a2 2 0 0 0-2-2H9"/></svg></button>`
+    : "";
   const cardDelete = `<button class="card-delete" onclick="deleteProduct('${p.sku}')" title="Eliminar producto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>`;
   let action;
   if(pending){
@@ -582,7 +606,7 @@ function cardHTML(p){
     ? `<div class="price-pending price-edit" onclick="editPrice('${p.sku}')">Precio pronto</div>`
     : `<div class="price price-edit" onclick="editPrice('${p.sku}')"><span class="cur">USD</span>${p.price.toFixed(2)}</div>`;
   return `<div class="card ${isOut?'is-out':''}">
-    <div class="photo">${badge}${media}${photoEdit}${photoDownload}${cardDelete}</div>
+    <div class="photo">${badge}${media}${photoEdit}${photoRemove}${photoDownload}${cardDelete}</div>
     <div class="card-body">
       <div class="p-name" data-sku="${p.sku}" onclick="editName('${p.sku}')">${esc(p.name)}</div>
       <div class="p-meta">${p.sku}</div>
@@ -802,6 +826,20 @@ function editPhoto(sku){
     sync();
   });
 }
+function removePhoto(sku){
+  if(!document.body.classList.contains("admin")) return;
+  const p = PRODUCTS.find(x=>x.sku===sku);
+  if(!p || !p.photo) return;
+  if(!confirm("¿Quitar la foto de \""+p.name+"\"?\n\nEl producto se queda en el catálogo, solo se borra la imagen. Después puedes subir otra.")) return;
+  delete p.photo;
+  /* se marca con null para que la foto no vuelva a aplicarse al recargar */
+  overrides[sku] = Object.assign({}, overrides[sku], {photo:null}); saveOverrides();
+  const extra = extraProducts.find(x=>x.sku===sku);
+  if(extra){ delete extra.photo; saveExtraProducts(); }
+  nubeQuitarFoto(sku);
+  sync();
+}
+
 function addProduct(){
   const name = prompt("Nombre del repuesto:"); if(!name||!name.trim()) return;
   let cat = prompt("Categoría ("+CATEGORIES.join(" / ")+"):", CATEGORIES[0]); if(!cat) return;
