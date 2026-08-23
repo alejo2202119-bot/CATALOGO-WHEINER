@@ -42,5 +42,13 @@ reemplazo con los colores de la marca. Para usar la foto real:
 
 ## Publicación
 
-El sitio se publica automáticamente con GitHub Pages en cada cambio que se
-sube a este repositorio (workflow en `.github/workflows/pages.yml`).
+El catálogo se ve en el navegador a través de [htmlpreview.github.io](https://htmlpreview.github.io),
+que muestra en vivo el contenido de este repositorio — no requiere GitHub
+Pages ni ningún paso de publicación aparte. Cada vez que se sube un cambio a
+la rama `claude/moto-repuestos-wheiner-catalog-8nu166`, el link se actualiza
+solo en segundos.
+
+- **Portada:** https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
+- **Catálogo:** https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/catalogo.html
+
+Estos links son estables mientras la rama exista con ese nombre.
