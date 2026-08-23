@@ -100,6 +100,9 @@
   .qty input::-webkit-outer-spin-button,.qty input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
 
   .empty{grid-column:1/-1; text-align:center; padding:56px 20px; color:var(--muted);}
+  .empty.soon{line-height:1.55; font-size:13.5px;}
+  .empty.soon .soon-icon{width:44px; height:44px; color:var(--red); opacity:.85; margin-bottom:12px;}
+  .empty.soon .big{color:var(--red); font-size:20px;}
   .empty .big{font-family:'Archivo'; font-weight:800; font-size:18px; color:var(--ink); margin-bottom:6px;}
 
   /* ===== CART BAR ===== */
@@ -423,6 +426,19 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 const nameCompare = (a,b)=> a.name.localeCompare(b.name, 'es', {sensitivity:'base', numeric:true});
 function normalizeSearch(s){ return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
 
+/* mensaje cuando no hay nada que mostrar:
+   - catálogo aún sin productos → aviso de "muy pronto"
+   - hay productos pero el filtro/búsqueda no encontró nada → "sin resultados" */
+function emptyHTML(){
+  return PRODUCTS.length === 0
+    ? `<div class="grid"><div class="empty soon">
+         <svg class="soon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+         <div class="big">¡Muy pronto!</div>
+         Estamos cargando tu catálogo con todos nuestros repuestos.<br>Vuelve en un momento.
+       </div></div>`
+    : `<div class="grid"><div class="empty"><div class="big">Sin resultados</div>Prueba con otro nombre o código, o cambia de categoría.</div></div>`;
+}
+
 function renderCatalog(){
   const q = normalizeSearch(query.trim());
   const isAdmin = document.body.classList.contains("admin");
@@ -432,12 +448,12 @@ function renderCatalog(){
     const items = PRODUCTS.filter(p=> visible(p) && (!q || normalizeSearch(p.name+" "+p.sku).includes(q))).sort(nameCompare);
     html = items.length
       ? `<div class="cat-label"><h2>Todos los productos</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
-      : `<div class="grid"><div class="empty"><div class="big">Sin resultados</div>Prueba con otro nombre o código, o cambia de categoría.</div></div>`;
+      : emptyHTML();
   } else {
     const items = PRODUCTS.filter(p=> p.cat===activeCat && visible(p) && (!q || normalizeSearch(p.name+" "+p.sku).includes(q))).sort(nameCompare);
     html = items.length
       ? `<div class="cat-label"><h2>${esc(activeCat)}</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
-      : `<div class="grid"><div class="empty"><div class="big">Sin resultados</div>Prueba con otro nombre o código, o cambia de categoría.</div></div>`;
+      : emptyHTML();
   }
   document.getElementById("catalog").innerHTML = html;
 }
