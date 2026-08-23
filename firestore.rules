@@ -1,23 +1,35 @@
 rules_version = '2';
 
-// Reglas de seguridad del catálogo de Moto Repuestos Wheiner SAS
+// ===========================================================================
+// Reglas de seguridad — catálogo de Moto Repuestos Wheiner SAS
+// ===========================================================================
+// Se pegan en: consola de Firebase → Firestore Database → pestaña "Reglas"
+// → botón "Publicar".
 //
-// - Cualquiera puede LEER el catálogo (los clientes deben poder verlo).
-// - Solo alguien que haya iniciado sesión con la cuenta de edición puede
-//   ESCRIBIR (crear, cambiar o borrar productos).
+// CONFIGURACIÓN ACTUAL (sin cuenta de acceso):
+//   Cualquiera puede leer y escribir en la colección "productos".
+//   La clave del botón secreto protege el modo edición dentro de la página,
+//   pero NO la base de datos: alguien con conocimientos técnicos que abra el
+//   catálogo podría modificarla por fuera de la página.
+//   Es suficiente para un catálogo pequeño y evita cualquier configuración
+//   extra en Firebase.
 //
-// Estas reglas se pegan en: consola de Firebase → Firestore Database →
-// pestaña "Reglas" → Publicar.
+// SI MÁS ADELANTE SE QUIERE CERRAR (recomendado):
+//   1. En Firebase: Authentication → Sign-in method → activar un método.
+//   2. En el catálogo: poner USAR_AUTH = true.
+//   3. Aquí: cambiar la línea de escritura de "if true" a
+//      "if request.auth != null" y volver a publicar.
+// ===========================================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     match /productos/{sku} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read:  if true;
+      allow write: if true;
     }
 
-    // todo lo demás queda cerrado
+    // Todo lo demás queda cerrado.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -394,7 +394,13 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "",
   appId: ""
 };
-const ADMIN_EMAIL = "admin@wheiner.app";   // ← cuenta fija del modo edición (la clave es su contraseña)
+/* USAR_AUTH = false  → la clave se valida aquí mismo (ADMIN_CODES). No hay que
+                        configurar nada más en Firebase que la base de datos.
+   USAR_AUTH = true   → la clave se valida contra una cuenta real de Firebase,
+                        lo que permite cerrar la base para que solo el dueño
+                        pueda escribir. */
+const USAR_AUTH  = false;
+const ADMIN_EMAIL = "admin@wheiner.app";   // ← solo se usa si USAR_AUTH = true
 
 const NUBE = { lista:false, db:null, auth:null };
 function nubeConfigurada(){ return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.projectId); }
@@ -414,10 +420,10 @@ async function iniciarNube(){
   const base = "https://www.gstatic.com/firebasejs/10.14.1/";
   try{
     await cargarScript(base+"firebase-app-compat.js");
-    await cargarScript(base+"firebase-auth-compat.js");
+    if(USAR_AUTH) await cargarScript(base+"firebase-auth-compat.js");
     await cargarScript(base+"firebase-firestore-compat.js");
     firebase.initializeApp(FIREBASE_CONFIG);
-    NUBE.auth = firebase.auth();
+    if(USAR_AUTH) NUBE.auth = firebase.auth();
     NUBE.db   = firebase.firestore();
     NUBE.lista = true;
     /* escucha en vivo: cualquier cambio hecho desde otro dispositivo
@@ -707,20 +713,21 @@ function clearSearch(){ query=""; document.getElementById("search").value=""; do
 function tryAdmin(){
   const c = prompt("Clave de edición:");
   if(c===null) return;
-  /* sin nube: se valida la clave local */
-  if(!NUBE.lista){
+  /* modo normal: la clave se valida aquí mismo. Sirve igual con o sin nube,
+     y permite editar desde cualquier dispositivo escribiendo la clave. */
+  if(!USAR_AUTH || !NUBE.lista){
     if(ADMIN_CODES.includes(c)){ document.body.classList.add("admin"); renderCatalog(); }
     else alert("Clave incorrecta.");
     return;
   }
-  /* con nube: la clave es la contraseña real de la cuenta de edición */
+  /* modo protegido (USAR_AUTH): la clave es la contraseña de la cuenta */
   NUBE.auth.signInWithEmailAndPassword(ADMIN_EMAIL, c)
     .then(()=>{ document.body.classList.add("admin"); renderCatalog(); })
     .catch(()=> alert("Clave incorrecta."));
 }
 function exitAdmin(){
   document.body.classList.remove("admin");
-  if(NUBE.lista && NUBE.auth.currentUser) NUBE.auth.signOut().catch(()=>{});
+  if(USAR_AUTH && NUBE.auth && NUBE.auth.currentUser) NUBE.auth.signOut().catch(()=>{});
   renderCatalog();
 }
 
