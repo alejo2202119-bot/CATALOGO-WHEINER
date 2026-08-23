@@ -43,14 +43,28 @@ reemplaza ese archivo conservando el mismo nombre.
 
 ## Publicación
 
-El catálogo se sirve con [raw.githack.com](https://raw.githack.com), que
-entrega el archivo del repositorio directamente como página web, con
-cabeceras `no-cache`. Eso significa que **el link siempre muestra la última
-versión**, sin caché intermedia y sin ningún paso de publicación aparte: basta
-con subir el cambio a la rama `claude/moto-repuestos-wheiner-catalog-8nu166`.
+### LINK OFICIAL Y DEFINITIVO — NO CAMBIAR
 
-**Link único y permanente:**
+```
+https://htmlpreview.github.io/?https://raw.githubusercontent.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
+```
 
-https://raw.githack.com/alejo2202119-bot/CATALOGO-WHEINER/claude/moto-repuestos-wheiner-catalog-8nu166/index.html
+Este es el único link que se comparte con los clientes. **Nunca debe
+cambiarse**, ni siquiera al hacer modificaciones al catálogo.
 
-Este link no cambia nunca mientras la rama conserve ese nombre.
+Para que ese link siga funcionando siempre, hay tres reglas que no se pueden
+romper al editar el proyecto:
+
+1. **No renombrar ni borrar** la rama
+   `claude/moto-repuestos-wheiner-catalog-8nu166`, el repositorio, ni el
+   archivo `index.html`.
+2. **Todo debe vivir en `index.html`** (portada y catálogo juntos). No añadir
+   enlaces `<a href>` que apunten a otro archivo `.html` del repositorio:
+   htmlpreview.github.io reescribe esos enlaces anteponiéndoles su propio
+   prefijo, lo que los duplica y rompe la navegación.
+3. Las imágenes se referencian con **ruta relativa** (`assets/...`), que
+   htmlpreview resuelve correctamente mediante el `<base>` que inyecta.
+
+Cada cambio subido a esa rama aparece solo en el link. GitHub sirve el archivo
+con `max-age=300`, así que un cambio recién subido puede tardar **hasta 5
+minutos** en verse; no es un error, solo hay que esperar ese momento.
