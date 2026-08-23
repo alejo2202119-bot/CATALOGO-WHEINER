@@ -44,14 +44,17 @@
   .chip{flex-shrink:0; font-size:13.5px; font-weight:600; padding:8px 15px; border-radius:20px; border:1.5px solid var(--line-strong); background:var(--surface); color:var(--muted); cursor:pointer; white-space:nowrap; transition:all .15s;}
   .chip.active{background:linear-gradient(120deg, var(--red) 0%, var(--red) 60%, var(--black) 100%); border-color:var(--red); color:#fff; box-shadow:0 4px 14px rgba(226,35,26,.28);}
 
-  /* ===== BANNER ===== */
-  .hero{padding:16px;}
-  .hero img{width:100%; height:auto; display:block; border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--line);}
-  /* banner de respaldo: se usa mientras no se suba la foto real del banner */
-  .hero .banner-ph{width:100%; aspect-ratio:3/1; border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--line); position:relative; overflow:hidden; background:repeating-linear-gradient(45deg,#fff 0 14px,#111 14px 28px); display:flex; align-items:center; justify-content:center;}
-  .hero .banner-ph::before{content:""; position:absolute; inset:8px; border-radius:12px; background:linear-gradient(135deg,#1a1a1a,#000 60%,var(--red-dark));}
-  .hero .banner-ph .bp-word{position:relative; z-index:1; font-family:'Archivo'; font-weight:900; font-size:34px; letter-spacing:-.02em; color:#fff;}
-  .hero .banner-ph .bp-word span{color:var(--red);}
+  /* ===== BANNER + BIENVENIDA ===== */
+  .hero{padding:16px 16px 4px; background:#0a0a0a; background-image:
+      radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px),
+      repeating-linear-gradient(125deg, rgba(226,35,26,.22) 0px, rgba(226,35,26,.22) 2px, transparent 2px, transparent 150px);
+    background-size: 6px 6px, auto;}
+  .hero img{width:100%; max-width:520px; height:auto; display:block; margin:0 auto; border-radius:16px; box-shadow:0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.10);}
+  .welcome{padding:18px 16px 14px; background:#0a0a0a; text-align:center;}
+  .welcome h1{font-family:'Archivo'; font-weight:900; font-size:26px; line-height:1.08; letter-spacing:-.02em; margin:0 0 6px; color:#fff;}
+  .welcome h1 .dot{color:#FF6A5E;}
+  .welcome .welcome-sub{font-family:'Archivo'; font-weight:700; font-size:13px; line-height:1.35; color:#fff; max-width:34ch; margin:0 auto 8px;}
+  .welcome .lead{font-size:12px; line-height:1.42; color:rgba(255,255,255,.75); max-width:38ch; margin:0 auto;}
 
   /* ===== ESLOGAN ===== */
   .slogan{margin:4px 16px 8px; border-radius:16px; background:linear-gradient(135deg, var(--ink) 0%, #1c2530 100%); color:#fff; padding:18px 20px; display:flex; align-items:center; gap:14px; box-shadow:0 10px 26px -10px rgba(20,26,34,.4);}
@@ -229,8 +232,13 @@
 
 
 <div class="hero">
-  <!-- BANNER-PRINCIPAL: reemplazar por <img src="assets/banner.jpg" alt="Moto Repuestos Wheiner"> cuando se suba la foto del banner -->
-  <div class="banner-ph"><div class="bp-word"><span>W</span>HEINER · CONFIANZA Y CALIDAD</div></div>
+  <img src="assets/banner-wheiner.webp" width="1672" height="941" alt="Wheiner — Confianza y calidad. Catálogo digital de Moto Repuestos Wheiner SAS." loading="eager">
+</div>
+
+<div class="welcome">
+  <h1 id="greeting">¡Bienvenido!</h1>
+  <p class="welcome-sub">Un gusto atenderte, estimado cliente — gracias por visitarnos.</p>
+  <p class="lead">Repuestos de moto con calidad, rendimiento y confianza: catálogo actualizado y pedido inmediato por WhatsApp.</p>
 </div>
 
 <div class="slogan">
@@ -650,6 +658,15 @@ function downloadCatalog(){
 }
 
 renderChips(); renderCatalog(); sync();
+
+(function(){
+  var h = new Date().getHours();
+  var msg = (h >= 5 && h < 12) ? "¡Buenos días!"
+          : (h >= 12 && h < 19) ? "¡Buenas tardes!"
+          : "¡Buenas noches!";
+  var el = document.getElementById("greeting");
+  if (el) el.textContent = msg;
+})();
 
 </script>
 </body>
