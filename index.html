@@ -381,7 +381,7 @@ const CAT_ICON = {
 function precioTxt(n){ return "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
 let cart = {};
-let activeCat = "Todos";
+let activeCat = CATEGORIES[0];   // sin boton "Todos": arranca en la primera categoria
 let query = "";
 
 /* ==========================================================================
@@ -537,7 +537,7 @@ function allCats(){
     .sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}));
 }
 function renderChips(){
-  const all = ["Todos", ...allCats()];
+  const all = allCats();
   document.getElementById("chips").innerHTML = all.map(c=>
     `<button class="chip ${c===activeCat?'active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">${c}</button>`
   ).join("");
@@ -566,19 +566,19 @@ function renderCatalog(){
   const q = normalizeSearch(query.trim());
   const isAdmin = document.body.classList.contains("admin");
   const visible = p => isAdmin || p.stock!=="out";
-  let html = "";
-  if(activeCat==="Todos"){
-    const items = PRODUCTS.filter(p=> visible(p) && (!q || normalizeSearch(p.name+" "+p.sku).includes(q))).sort(nameCompare);
-    html = items.length
-      ? `<div class="cat-label"><h2>Todos los productos</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
-      : emptyHTML();
+  let items, titulo;
+  if(q){
+    /* al buscar se recorre TODO el catalogo, no solo la categoria abierta */
+    items  = PRODUCTS.filter(p=> visible(p) && normalizeSearch(p.name+" "+p.sku+" "+(p.code||"")).includes(q));
+    titulo = "Resultados de la búsqueda";
   } else {
-    const items = PRODUCTS.filter(p=> p.cat===activeCat && visible(p) && (!q || normalizeSearch(p.name+" "+p.sku).includes(q))).sort(nameCompare);
-    html = items.length
-      ? `<div class="cat-label"><h2>${esc(activeCat)}</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
-      : emptyHTML();
+    items  = PRODUCTS.filter(p=> p.cat===activeCat && visible(p));
+    titulo = activeCat;
   }
-  document.getElementById("catalog").innerHTML = html;
+  items.sort(nameCompare);
+  document.getElementById("catalog").innerHTML = items.length
+    ? `<div class="cat-label"><h2>${esc(titulo)}</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
+    : emptyHTML();
 }
 
 function cardHTML(p){
