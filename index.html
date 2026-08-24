@@ -709,7 +709,6 @@ function closeCart(){ document.getElementById("drawer").classList.remove("open")
 
 function buildWaUrl(){
   const now = new Date(), pad = n=>String(n).padStart(2,"0");
-  const num = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
   const fecha = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   const entries = Object.entries(cart);
   let total = 0, unidades = 0;
@@ -722,8 +721,7 @@ function buildWaUrl(){
     "🛒 *PEDIDO · CATÁLOGO DIGITAL WHEINER*",
     "Moto Repuestos Wheiner SAS · NIT 900862610-6",
     "",
-    `*Pedido N° ${num}*`,
-    `Fecha: ${fecha}`,
+    `*Fecha: ${fecha}*`,
     "",
     "¡Hola! Acabo de armar este pedido desde el catálogo digital:",
     "",
