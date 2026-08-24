@@ -719,18 +719,21 @@ function buildWaUrl(){
     return `${i+1}. ${p.name}${p.code ? " ("+p.code+")" : ""}\n   Cantidad: ${q} · ${precioTxt(p.price)} c/u · Subtotal: ${precioTxt(sub)}`;
   });
   const msg = [
-    "*PEDIDO*",
-    `N° ${num} · ${fecha}`,
+    "🛒 *PEDIDO · CATÁLOGO DIGITAL WHEINER*",
+    "Moto Repuestos Wheiner SAS · NIT 900862610-6",
     "",
-    "Hola, quiero confirmar este pedido:",
+    `*Pedido N° ${num}*`,
+    `Fecha: ${fecha}`,
+    "",
+    "¡Hola! Acabo de armar este pedido desde el catálogo digital:",
     "",
     ...lineas,
     "",
-    "-----------------------------",
-    `${entries.length} producto(s) · ${unidades} unidad(es)`,
+    "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
+    `Resumen: ${entries.length} producto(s) · ${unidades} unidad(es)`,
     `*TOTAL: ${precioTxt(total)}*`,
     "",
-    "Quedo atento para coordinar pago y entrega. ¡Gracias!"
+    "Quedo atento para confirmar disponibilidad, forma de pago y entrega. ¡Muchas gracias!"
   ].join("\n");
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
