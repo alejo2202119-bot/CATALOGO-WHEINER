@@ -382,7 +382,7 @@ const CAT_ICON = {
 function precioTxt(n){ return "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
 
 let cart = {};
-let activeCat = CATEGORIES[0];   // sin boton "Todos": arranca en la primera categoria
+let activeCat = "Todos";   // arranca mostrando el catalogo entero de la A a la Z
 let query = "";
 
 /* ==========================================================================
@@ -538,7 +538,7 @@ function allCats(){
     .sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}));
 }
 function renderChips(){
-  const all = allCats();
+  const all = ["Todos", ...allCats()];
   document.getElementById("chips").innerHTML = all.map(c=>
     `<button class="chip ${c===activeCat?'active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">${c}</button>`
   ).join("");
@@ -572,6 +572,9 @@ function renderCatalog(){
     /* al buscar se recorre TODO el catalogo, no solo la categoria abierta */
     items  = PRODUCTS.filter(p=> visible(p) && normalizeSearch(p.name+" "+p.sku+" "+(p.code||"")).includes(q));
     titulo = "Resultados de la búsqueda";
+  } else if(activeCat === "Todos"){
+    items  = PRODUCTS.filter(visible);
+    titulo = "Todos los productos";
   } else {
     items  = PRODUCTS.filter(p=> p.cat===activeCat && visible(p));
     titulo = activeCat;
