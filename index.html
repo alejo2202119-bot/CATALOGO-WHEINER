@@ -362,8 +362,19 @@ const ADMIN_CODES = ["W-2026"];      // ← clave para el modo edición
 
 const CATEGORIES = ["Accesorios y Lujos", "Cables y Comandos", "Carrocería", "Eléctrico",
                     "Frenos", "Iluminación", "Llantas y Neumáticos", "Motor",
-                    "Protección y Defensas", "Rodamientos y Ejes", "Suspensión",
-                    "Transmisión y Clutch"];  // ← categorías del negocio
+                    "Lubricantes", "Protección y Defensas", "Rodamientos y Ejes",
+                    "Suspensión", "Transmisión y Clutch"];  // ← categorías del negocio
+
+/* Los botones que ve el cliente. Se dejan pocos y claros: cada uno agrupa
+   una o varias categorías de las de arriba. "Todos" muestra el catálogo
+   completo en orden alfabético. */
+const VISTAS = [
+  { id:"Todos",       cats:null },
+  { id:"Accesorios",  cats:["Accesorios y Lujos"] },
+  { id:"Llantas",     cats:["Llantas y Neumáticos"] },
+  { id:"Lubricantes", cats:["Lubricantes"] },
+];
+function vistaActiva(){ return VISTAS.find(v=>v.id===activeCat) || VISTAS[0]; }
 
 /*PRODUCTS_START*/
 let PRODUCTS = [
@@ -375,6 +386,7 @@ const CAT_ICON = {
   "Iluminación":'<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9c.4.3.5.7.5 1.1v.5h6v-.5c0-.4.1-.8.5-1.1A6 6 0 0012 3z"/>',
   "Eléctrico":'<path d="M4 12a4 4 0 018 0 4 4 0 008 0"/><path d="M4 12v4M20 12v4"/>',
   "Protección y Defensas":'<path d="M12 3l7 3v6c0 4.2-2.9 7.9-7 9-4.1-1.1-7-4.8-7-9V6l7-3z"/>',
+  "Lubricantes":'<path d="M12 3s5 5.5 5 9a5 5 0 01-10 0c0-3.5 5-9 5-9z"/>',
   "Accesorios y Lujos":'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.33 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.33 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09A1.7 1.7 0 009 19.4a1.7 1.7 0 00-1.87.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.33-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/>',
 };
 
@@ -538,12 +550,19 @@ function allCats(){
     .sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base',numeric:true}));
 }
 function renderChips(){
-  const all = ["Todos", ...allCats()];
-  document.getElementById("chips").innerHTML = all.map(c=>
-    `<button class="chip ${c===activeCat?'active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">${c}</button>`
+  document.getElementById("chips").innerHTML = VISTAS.map(v=>
+    `<button class="chip ${v.id===activeCat?'active':''}" onclick="setCat('${v.id}')">${v.id}</button>`
   ).join("");
 }
-function setCat(c){ activeCat=c; renderChips(); renderCatalog(); }
+function setCat(c){
+  activeCat = c;
+  renderChips(); renderCatalog();
+  /* al cambiar de seccion se sube al inicio de la lista */
+  const cat = document.getElementById("catalog");
+  const alto = document.querySelector("header").getBoundingClientRect().height;
+  const top = cat.getBoundingClientRect().top + window.scrollY - alto - 8;
+  if(window.scrollY > top) window.scrollTo({top: Math.max(0, top), behavior:"smooth"});
+}
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -553,14 +572,18 @@ function normalizeSearch(s){ return String(s).toLowerCase().normalize("NFD").rep
 /* mensaje cuando no hay nada que mostrar:
    - catálogo aún sin productos → aviso de "muy pronto"
    - hay productos pero el filtro/búsqueda no encontró nada → "sin resultados" */
-function emptyHTML(){
-  return PRODUCTS.length === 0
+function emptyHTML(buscando){
+  /* si la seccion aun no tiene productos se avisa de que esta en camino;
+     si es una busqueda sin resultados se dice tal cual */
+  return !buscando
     ? `<div class="grid"><div class="empty soon">
          <svg class="soon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
          <div class="big">¡Muy pronto!</div>
-         Estamos cargando tu catálogo con todos nuestros repuestos.<br>Vuelve en un momento.
+         ${PRODUCTS.length === 0
+             ? "Estamos cargando tu catálogo con todos nuestros repuestos.<br>Vuelve en un momento."
+             : "Estamos surtiendo esta sección.<br>Mientras tanto, mira las demás o usa el buscador."}
        </div></div>`
-    : `<div class="grid"><div class="empty"><div class="big">Sin resultados</div>Prueba con otro nombre o código, o cambia de categoría.</div></div>`;
+    : `<div class="grid"><div class="empty"><div class="big">Sin resultados</div>Prueba con otro nombre o código, o toca <b>Todos</b>.</div></div>`;
 }
 
 function renderCatalog(){
@@ -572,17 +595,16 @@ function renderCatalog(){
     /* al buscar se recorre TODO el catalogo, no solo la categoria abierta */
     items  = PRODUCTS.filter(p=> visible(p) && normalizeSearch(p.name+" "+p.sku+" "+(p.code||"")).includes(q));
     titulo = "Resultados de la búsqueda";
-  } else if(activeCat === "Todos"){
-    items  = PRODUCTS.filter(visible);
-    titulo = "Todos los productos";
   } else {
-    items  = PRODUCTS.filter(p=> p.cat===activeCat && visible(p));
-    titulo = activeCat;
+    const v = vistaActiva();
+    items  = v.cats ? PRODUCTS.filter(p=> v.cats.includes(p.cat) && visible(p))
+                    : PRODUCTS.filter(visible);
+    titulo = v.cats ? v.id : "Todos los productos";
   }
   items.sort(nameCompare);
   document.getElementById("catalog").innerHTML = items.length
     ? `<div class="cat-label"><h2>${esc(titulo)}</h2><span class="rule"></span><span class="cnt">${items.length}</span></div><div class="grid">${items.map(cardHTML).join("")}</div>`
-    : emptyHTML();
+    : emptyHTML(!!q);
 }
 
 function cardHTML(p){
