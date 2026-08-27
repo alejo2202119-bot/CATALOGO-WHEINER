@@ -114,6 +114,31 @@
 
   .overlay{position:fixed; inset:0; background:rgba(20,26,34,.45); opacity:0; pointer-events:none; transition:opacity .25s; z-index:40;}
 
+  /* ===== PANEL DE VISITAS (solo el dueño) ===== */
+  .stats{position:fixed; inset:0; z-index:90; background:rgba(10,13,17,.55); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s;}
+  .stats.open{opacity:1; pointer-events:auto;}
+  .stats-box{background:var(--surface); width:min(460px,100%); max-height:92vh; overflow-y:auto; border-radius:22px 22px 0 0; padding:0 0 calc(20px + env(safe-area-inset-bottom));}
+  .stats-head{position:sticky; top:0; background:var(--surface); display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--line);}
+  .stats-head h3{font-family:'Archivo'; font-weight:800; font-size:19px; margin:0;}
+  .stats-head .x{background:none; border:none; font-size:26px; color:var(--muted); cursor:pointer; line-height:1; padding:0 4px;}
+  .stats-body{padding:18px 20px 4px;}
+  .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .stat{background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px;}
+  .stat.wide{grid-column:1 / -1; background:var(--black); border-color:var(--black); color:#fff;}
+  .stat .n{font-family:'Archivo'; font-weight:900; font-size:30px; line-height:1; letter-spacing:-.02em;}
+  .stat.wide .n{font-size:40px; color:#fff;}
+  .stat .k{font-size:11px; color:var(--muted); margin-top:6px; letter-spacing:.02em; text-transform:uppercase; font-weight:600;}
+  .stat.wide .k{color:rgba(255,255,255,.72);}
+  .stats-sub{font-family:'Archivo'; font-weight:800; font-size:13px; margin:22px 0 10px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+  .day{display:flex; align-items:center; gap:9px; padding:5px 0;}
+  .day .d{font-family:'IBM Plex Mono'; font-size:11px; color:var(--muted); width:62px; flex:none;}
+  .day .bar{flex:1; height:9px; background:var(--gray-soft); border-radius:5px; overflow:hidden;}
+  .day .bar i{display:block; height:100%; background:var(--red); border-radius:5px;}
+  .day .v{font-family:'IBM Plex Mono'; font-size:12px; font-weight:600; width:34px; text-align:right; flex:none;}
+  .day.hoy .d, .day.hoy .v{color:var(--red); font-weight:700;}
+  .stats-note{font-size:11.5px; color:var(--muted); line-height:1.55; margin:20px 0 0; padding-top:14px; border-top:1px solid var(--line);}
+  .stats-warn{background:var(--out-bg); color:var(--red-dark); border-radius:12px; padding:14px; font-size:12.5px; line-height:1.55;}
+
   /* ===== VISOR DE FOTO (LIGHTBOX) ===== */
   .photo img{cursor:zoom-in;}
   .lightbox{position:fixed; inset:0; z-index:80; background:rgba(10,13,17,.92); display:flex; align-items:center; justify-content:center; padding:24px; opacity:0; pointer-events:none; transition:opacity .2s;}
@@ -320,6 +345,17 @@
 </div>
 
 <div class="overlay" id="overlay" onclick="closeCart()"></div>
+
+<!-- panel de visitas: solo se abre con la clave VISITAS_CODES -->
+<div class="stats" id="stats" onclick="if(event.target===this) cerrarVisitas()">
+  <div class="stats-box">
+    <div class="stats-head">
+      <h3>Visitas al catálogo</h3>
+      <button class="x" onclick="cerrarVisitas()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="stats-body" id="statsBody"></div>
+  </div>
+</div>
 <div class="drawer" id="drawer">
   <div class="drawer-grip"></div>
   <div class="drawer-head"><h3>Tu pedido</h3><button class="x" onclick="closeCart()">✕</button></div>
@@ -359,6 +395,7 @@
 
 const WHATSAPP_NUMBER = "573153266522";   // ← número de WhatsApp de Moto Repuestos Wheiner (con código de país, sin +)
 const ADMIN_CODES = ["W-2026"];      // ← clave para el modo edición
+const VISITAS_CODES = ["V-2026"];    // ← clave aparte: solo muestra el contador de visitas
 
 const CATEGORIES = ["Accesorios y Lujos", "Cables y Comandos", "Carrocería", "Eléctrico",
                     "Frenos", "Iluminación", "Llantas y Neumáticos", "Motor",
@@ -452,6 +489,7 @@ async function iniciarNube(){
     if(USAR_AUTH) NUBE.auth = firebase.auth();
     NUBE.db   = firebase.firestore();
     NUBE.lista = true;
+    registrarVisita();
     /* escucha en vivo: cualquier cambio hecho desde otro dispositivo
        aparece aquí solo, sin recargar la página */
     NUBE.db.collection("productos").onSnapshot(
@@ -775,8 +813,10 @@ function clearSearch(){ query=""; document.getElementById("search").value=""; do
 
 /* ---- modo edición ---- */
 function tryAdmin(){
-  const c = prompt("Clave de edición:");
+  const c = prompt("Clave:");
   if(c===null) return;
+  /* la clave de visitas es aparte: solo abre el contador, no deja editar nada */
+  if(VISITAS_CODES.includes(c)){ verVisitas(); return; }
   /* modo normal: la clave se valida aquí mismo. Sirve igual con o sin nube,
      y permite editar desde cualquier dispositivo escribiendo la clave. */
   if(!USAR_AUTH || !NUBE.lista){
@@ -793,6 +833,119 @@ function exitAdmin(){
   document.body.classList.remove("admin");
   if(USAR_AUTH && NUBE.auth && NUBE.auth.currentUser) NUBE.auth.signOut().catch(()=>{});
   renderCatalog();
+}
+
+/* ---- contador de visitas ----
+   Se guarda en la misma base de Firebase, en la colección "visitas":
+     visitas/2026-08-27  → { visitas: n, equipos: n }   (un documento por día)
+     visitas/resumen     → { visitas: n, equipos: n, ultima: fecha }
+   "visitas" cuenta cada vez que alguien abre el catálogo; "equipos" cuenta
+   celulares o computadores distintos, que es lo más parecido a personas.
+   Todo se escribe con increment(), así que dos personas entrando a la vez
+   no se pisan la una a la otra. */
+const COL_VISITAS = "visitas";
+
+function diaISO(d){
+  const p = n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function milesTxt(n){ return Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+const ES_DIA = /^\d{4}-\d{2}-\d{2}$/;
+
+function registrarVisita(){
+  if(!NUBE.lista) return;
+  let nuevaSesion = true, nuevoEquipo = false;
+  try{
+    nuevaSesion = !sessionStorage.getItem("wh_visita");
+    if(nuevaSesion) sessionStorage.setItem("wh_visita", "1");
+    if(!localStorage.getItem("wh_equipo")){ nuevoEquipo = true; localStorage.setItem("wh_equipo", "1"); }
+  }catch(e){ /* navegador que bloquea el almacenamiento: se cuenta igual */ }
+  if(!nuevaSesion) return;          // recargar la página no infla el contador
+
+  const inc  = firebase.firestore.FieldValue.increment(1);
+  const dato = nuevoEquipo ? { visitas:inc, equipos:inc } : { visitas:inc };
+  const col  = NUBE.db.collection(COL_VISITAS);
+  /* si falla (por ejemplo, reglas sin publicar) no se le muestra nada al
+     cliente: el catálogo tiene que seguir funcionando igual */
+  col.doc(diaISO(new Date())).set(dato, {merge:true}).catch(()=>{});
+  col.doc("resumen").set(Object.assign({ ultima:new Date().toISOString() }, dato), {merge:true}).catch(()=>{});
+}
+
+function cerrarVisitas(){ document.getElementById("stats").classList.remove("open"); }
+
+async function verVisitas(){
+  const caja = document.getElementById("statsBody");
+  document.getElementById("stats").classList.add("open");
+  caja.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:8px 0 20px">Cargando…</p>`;
+
+  if(!NUBE.lista){
+    caja.innerHTML = `<div class="stats-warn"><b>Sin conexión con la base de datos.</b><br>
+      Revisa que tengas internet y vuelve a intentarlo.</div>`;
+    return;
+  }
+  let docs;
+  try{
+    docs = (await NUBE.db.collection(COL_VISITAS).get()).docs;
+  }catch(e){
+    caja.innerHTML = `<div class="stats-warn"><b>La base de datos no deja leer las visitas.</b><br>
+      Falta publicar las reglas de la colección <b>visitas</b> en la consola de Firebase.
+      Están en el archivo <b>firestore.rules</b> del proyecto.</div>`;
+    return;
+  }
+
+  const porDia = {}; let resumen = null;
+  docs.forEach(d=>{
+    if(d.id === "resumen") resumen = d.data();
+    else if(ES_DIA.test(d.id)) porDia[d.id] = d.data();
+  });
+
+  const sum = (obj, campo)=> Object.values(obj).reduce((a,x)=> a + (x[campo]||0), 0);
+  const total   = resumen && resumen.visitas ? resumen.visitas : sum(porDia, "visitas");
+  const equipos = resumen && resumen.equipos ? resumen.equipos : sum(porDia, "equipos");
+
+  /* serie de los últimos 14 días, incluidos los días en cero */
+  const hoy = new Date(), serie = [];
+  for(let i=13; i>=0; i--){
+    const d = new Date(hoy); d.setDate(hoy.getDate()-i);
+    const id = diaISO(d);
+    serie.push({ id, n:(porDia[id]||{}).visitas || 0,
+                 etiqueta: `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}` });
+  }
+  const desde = n => { const d = new Date(hoy); d.setDate(hoy.getDate()-(n-1)); return diaISO(d); };
+  const rango = n => Object.entries(porDia)
+      .filter(([id]) => id >= desde(n))
+      .reduce((a,[,x]) => a + (x.visitas||0), 0);
+
+  const deHoy = (porDia[diaISO(hoy)]||{}).visitas || 0;
+  const tope  = Math.max(1, ...serie.map(d=>d.n));
+  const ultima = resumen && resumen.ultima
+    ? new Date(resumen.ultima).toLocaleString("es-CO", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"})
+    : "—";
+
+  caja.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat wide"><div class="n">${milesTxt(total)}</div><div class="k">Visitas en total</div></div>
+      <div class="stat"><div class="n">${milesTxt(equipos)}</div><div class="k">Personas (equipos distintos)</div></div>
+      <div class="stat"><div class="n">${milesTxt(deHoy)}</div><div class="k">Hoy</div></div>
+      <div class="stat"><div class="n">${milesTxt(rango(7))}</div><div class="k">Últimos 7 días</div></div>
+      <div class="stat"><div class="n">${milesTxt(rango(30))}</div><div class="k">Últimos 30 días</div></div>
+    </div>
+
+    <div class="stats-sub">Día por día</div>
+    ${serie.map(d=>`
+      <div class="day${d.id===diaISO(hoy)?' hoy':''}">
+        <span class="d">${d.etiqueta}</span>
+        <span class="bar"><i style="width:${Math.round(d.n/tope*100)}%"></i></span>
+        <span class="v">${milesTxt(d.n)}</span>
+      </div>`).join("")}
+
+    <p class="stats-note">
+      Última visita: ${esc(ultima)}<br>
+      Se cuenta una visita cada vez que alguien abre el catálogo. Recargar la
+      página no suma de nuevo. "Personas" cuenta celulares y computadores
+      distintos, así que si un cliente vuelve desde el mismo teléfono suma
+      visita pero no persona.
+    </p>`;
 }
 
 function toggleStock(sku){

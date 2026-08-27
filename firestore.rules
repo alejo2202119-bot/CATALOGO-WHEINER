@@ -29,6 +29,14 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Contador de visitas. Cualquiera que abra el catálogo suma una visita,
+    // por eso hace falta permitir la escritura; el número solo se ve dentro
+    // de la página escribiendo la clave de visitas.
+    match /visitas/{dia} {
+      allow read:  if true;
+      allow write: if true;
+    }
+
     // Todo lo demás queda cerrado.
     match /{document=**} {
       allow read, write: if false;
