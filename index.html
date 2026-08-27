@@ -367,11 +367,17 @@ const CATEGORIES = ["Accesorios y Lujos", "Cables y Comandos", "Carrocería", "E
 
 /* Los botones que ve el cliente. Se dejan pocos y claros: cada uno agrupa
    una o varias categorías de las de arriba. "Todos" muestra el catálogo
-   completo en orden alfabético. */
+   completo en orden alfabético.
+   "Repuestos" se define al revés: es todo lo que NO es accesorio, llanta ni
+   lubricante. Así, si más adelante se crea una categoría nueva de mecánica,
+   entra sola en ese botón sin tener que tocar nada. */
+const NO_REPUESTO = ["Accesorios y Lujos", "Llantas y Neumáticos", "Lubricantes"];
+
 const VISTAS = [
-  { id:"Todos",       cats:null },
-  { id:"Accesorios",  cats:["Accesorios y Lujos"] },
-  { id:"Llantas",     cats:["Llantas y Neumáticos"] },
+  { id:"Todos",       filtro:null },
+  { id:"Accesorios",  filtro:p=> p.cat === "Accesorios y Lujos" },
+  { id:"Llantas",     filtro:p=> p.cat === "Llantas y Neumáticos" },
+  { id:"Repuestos",   filtro:p=> !NO_REPUESTO.includes(p.cat) },
 ];
 function vistaActiva(){ return VISTAS.find(v=>v.id===activeCat) || VISTAS[0]; }
 
@@ -596,9 +602,9 @@ function renderCatalog(){
     titulo = "Resultados de la búsqueda";
   } else {
     const v = vistaActiva();
-    items  = v.cats ? PRODUCTS.filter(p=> v.cats.includes(p.cat) && visible(p))
-                    : PRODUCTS.filter(visible);
-    titulo = v.cats ? v.id : "Todos los productos";
+    items  = v.filtro ? PRODUCTS.filter(p=> v.filtro(p) && visible(p))
+                      : PRODUCTS.filter(visible);
+    titulo = v.filtro ? v.id : "Todos los productos";
   }
   items.sort(nameCompare);
   document.getElementById("catalog").innerHTML = items.length
