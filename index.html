@@ -138,6 +138,9 @@
   .day.hoy .d, .day.hoy .v{color:var(--red); font-weight:700;}
   .stats-note{font-size:11.5px; color:var(--muted); line-height:1.55; margin:20px 0 0; padding-top:14px; border-top:1px solid var(--line);}
   .stats-warn{background:var(--out-bg); color:var(--red-dark); border-radius:12px; padding:14px; font-size:12.5px; line-height:1.55;}
+  .day.lugar .d{width:auto; flex:0 1 132px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Inter'; font-size:12.5px; color:var(--ink);}
+  .stats-borrar{width:100%; margin-top:14px; background:none; border:1.5px solid var(--line-strong); color:var(--red); border-radius:12px; padding:12px; font-family:'Archivo'; font-weight:700; font-size:13px; cursor:pointer;}
+  .stats-borrar:active{background:var(--out-bg); border-color:var(--red);}
 
   /* ===== VISOR DE FOTO (LIGHTBOX) ===== */
   .photo img{cursor:zoom-in;}
@@ -869,6 +872,67 @@ function registrarVisita(){
      cliente: el catálogo tiene que seguir funcionando igual */
   col.doc(diaISO(new Date())).set(dato, {merge:true}).catch(()=>{});
   col.doc("resumen").set(Object.assign({ ultima:new Date().toISOString() }, dato), {merge:true}).catch(()=>{});
+  registrarLugar();
+}
+
+/* ---- de dónde entran ----
+   Se le pregunta a un servicio público cuál es el país y la ciudad de la
+   conexión. NO se le pide permiso de ubicación al visitante ni aparece
+   ninguna ventana: es la ciudad por donde sale su internet, aproximada.
+   Se guarda solo el conteo por lugar; la dirección IP no se guarda en
+   ninguna parte. Todo esto va aparte del contador: si el servicio se cae
+   o se demora, la visita ya quedó contada igual y el catálogo ni se
+   entera. */
+const FUENTES_LUGAR = [
+  { url:"https://ipwho.is/",
+    leer:d => (d && d.success !== false) ? { pais:d.country_code, ciudad:d.city } : null },
+  { url:"https://get.geojs.io/v1/ip/geo.json",
+    leer:d => (d && d.country_code) ? { pais:d.country_code, ciudad:d.city } : null },
+];
+
+/* Firestore no acepta . ~ * / [ ] dentro del nombre de un campo */
+function limpiaClave(t){
+  return String(t||"").replace(/[.~*/\[\]|]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+async function consultarLugar(){
+  for(const f of FUENTES_LUGAR){
+    try{
+      /* si el servicio se demora más de 5 segundos se abandona y se prueba
+         con el siguiente; nunca se queda esperando */
+      const corte = new AbortController();
+      const reloj = setTimeout(()=> corte.abort(), 5000);
+      const r = await fetch(f.url, { signal:corte.signal, cache:"no-store" });
+      clearTimeout(reloj);
+      if(!r.ok) continue;
+      const d = f.leer(await r.json());
+      if(d && d.pais) return d;
+    }catch(e){ /* servicio caído o sin internet: se prueba el siguiente */ }
+  }
+  return null;
+}
+
+function registrarLugar(){
+  consultarLugar().then(u=>{
+    if(!u || !NUBE.lista) return;
+    const pais = String(u.pais).toUpperCase().replace(/[^A-Z]/g, "").slice(0,2);
+    if(pais.length !== 2) return;
+    const uno = ()=> firebase.firestore.FieldValue.increment(1);
+    const datos = { paises: { [pais]: uno() } };
+    const ciudad = limpiaClave(u.ciudad);
+    if(ciudad) datos.ciudades = { [pais + "|" + ciudad]: uno() };
+    NUBE.db.collection(COL_VISITAS).doc("lugares").set(datos, {merge:true}).catch(()=>{});
+  }).catch(()=>{});
+}
+
+/* nombre y bandera a partir del código de país (CO → 🇨🇴 Colombia) */
+function nombrePais(cod){
+  try{ return new Intl.DisplayNames(["es"], {type:"region"}).of(cod) || cod; }
+  catch(e){ return cod; }
+}
+function banderaPais(cod){
+  try{ return String.fromCodePoint(...[...cod].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)); }
+  catch(e){ return ""; }
 }
 
 function cerrarVisitas(){ document.getElementById("stats").classList.remove("open"); }
@@ -893,10 +957,11 @@ async function verVisitas(){
     return;
   }
 
-  const porDia = {}; let resumen = null;
+  const porDia = {}; let resumen = null, lugares = null;
   docs.forEach(d=>{
-    if(d.id === "resumen") resumen = d.data();
-    else if(ES_DIA.test(d.id)) porDia[d.id] = d.data();
+    if(d.id === "resumen")      resumen = d.data();
+    else if(d.id === "lugares") lugares = d.data();
+    else if(ES_DIA.test(d.id))  porDia[d.id] = d.data();
   });
 
   const sum = (obj, campo)=> Object.values(obj).reduce((a,x)=> a + (x[campo]||0), 0);
@@ -939,13 +1004,76 @@ async function verVisitas(){
         <span class="v">${milesTxt(d.n)}</span>
       </div>`).join("")}
 
+    ${bloqueLugares(lugares)}
+
     <p class="stats-note">
       Última visita: ${esc(ultima)}<br>
       Se cuenta una visita cada vez que alguien abre el catálogo. Recargar la
       página no suma de nuevo. "Personas" cuenta celulares y computadores
       distintos, así que si un cliente vuelve desde el mismo teléfono suma
-      visita pero no persona.
-    </p>`;
+      visita pero no persona. La ciudad es la de la conexión a internet, así
+      que es aproximada: con datos móviles a veces sale otra ciudad.
+    </p>
+
+    <p class="stats-note" style="border:none;padding-top:4px;margin-top:2px">
+      Nada se borra solo: los números quedan guardados para siempre hasta que
+      tú los borres aquí.
+    </p>
+    <button class="stats-borrar" onclick="borrarVisitas()">Borrar todas las visitas</button>`;
+}
+
+/* listas de países y ciudades, ordenadas de más a menos */
+function bloqueLugares(lugares){
+  const paises   = (lugares && lugares.paises)   || {};
+  const ciudades = (lugares && lugares.ciudades) || {};
+  if(!Object.keys(paises).length && !Object.keys(ciudades).length){
+    return `<div class="stats-sub">De dónde entran</div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.55;margin:0">
+        Todavía sin datos. El país aparece a partir de la próxima visita.</p>`;
+  }
+  const lista = (obj, etiqueta, cuantos)=>{
+    const filas = Object.entries(obj)
+        .filter(([,n]) => n > 0)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, cuantos);
+    if(!filas.length) return "";
+    const tope = Math.max(1, ...filas.map(f => f[1]));
+    return filas.map(([clave, n])=>`
+      <div class="day lugar">
+        <span class="d">${esc(etiqueta(clave))}</span>
+        <span class="bar"><i style="width:${Math.round(n/tope*100)}%"></i></span>
+        <span class="v">${milesTxt(n)}</span>
+      </div>`).join("");
+  };
+  const filasPais = lista(paises, c => `${banderaPais(c)} ${nombrePais(c)}`, 8);
+  const filasCiu  = lista(ciudades, c => {
+    const i = c.indexOf("|");
+    return i < 0 ? c : `${banderaPais(c.slice(0,i))} ${c.slice(i+1)}`;
+  }, 10);
+  return `<div class="stats-sub">Países</div>${filasPais}` +
+         (filasCiu ? `<div class="stats-sub">Ciudades</div>${filasCiu}` : "");
+}
+
+/* borrado manual: es lo único que pone los contadores en cero */
+async function borrarVisitas(){
+  if(!NUBE.lista){ alert("Sin conexión con la base de datos."); return; }
+  if(!confirm("¿Borrar TODAS las visitas?\n\nLos contadores vuelven a cero y no se pueden recuperar.")) return;
+  const t = prompt('Para confirmar, escribe:  BORRAR');
+  if(t === null) return;
+  if(t.trim().toUpperCase() !== "BORRAR"){ alert("No se borró nada."); return; }
+
+  const caja = document.getElementById("statsBody");
+  caja.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:8px 0 20px">Borrando…</p>`;
+  try{
+    const docs = (await NUBE.db.collection(COL_VISITAS).get()).docs;
+    await Promise.all(docs.map(d => d.ref.delete()));
+    /* así este mismo equipo vuelve a contarse la próxima vez */
+    try{ sessionStorage.removeItem("wh_visita"); localStorage.removeItem("wh_equipo"); }catch(e){}
+    alert("Listo. Las visitas quedaron en cero.");
+  }catch(e){
+    alert("No se pudieron borrar. Revisa la conexión e inténtalo de nuevo.");
+  }
+  verVisitas();
 }
 
 function toggleStock(sku){
